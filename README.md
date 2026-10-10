@@ -1,42 +1,42 @@
-![](../../workflows/gds/badge.svg) ![](../../workflows/docs/badge.svg) ![](../../workflows/test/badge.svg) ![](../../workflows/fpga/badge.svg)
+# EMG MAV Activity Detector
 
-# Tiny Tapeout Verilog Project Template
+This is my Tiny Tapeout project for detecting activity in a single EMG channel. The chip receives digital samples, subtracts an adjustable offset, takes the absolute value, and calculates the mean absolute value (MAV) of every 64 samples. Two adjustable thresholds decide when the activity output turns on or off.
 
-- [Read the documentation for project](docs/info.md)
+The same idea can be used with other sensors when the size of a signal is useful. The chip needs an external ADC or a microcontroller to convert an analog signal into digital samples.
 
-## What is Tiny Tapeout?
+## Main features
 
-Tiny Tapeout is an educational project that aims to make it easier and cheaper than ever to get your digital and analog designs manufactured on a real chip.
+- One channel with unsigned 12-bit samples.
+- Adjustable offset and activity thresholds.
+- Fixed, non-overlapping windows of 64 samples.
+- A live activity output and a toggle for each new MAV result.
+- Snapshot readout of the centered sample, absolute value, MAV, and status.
+- A simple parallel command interface with an 8-bit input bus.
 
-To learn more and get started, visit https://tinytapeout.com.
+The intended operating clock is 1 MHz. This is not a measured maximum clock frequency. Sampling speed is set by the external controller. For example, 2,000 accepted samples per second gives one MAV result every 32 ms.
 
-## Set up your Verilog project
+## Files
 
-1. Add your Verilog files to the `src` folder.
-2. Edit the [info.yaml](info.yaml) and update information about your project, paying special attention to the `source_files` and `top_module` properties. If you are upgrading an existing Tiny Tapeout project, check out our [online info.yaml migration tool](https://tinytapeout.github.io/tt-yaml-upgrade-tool/).
-3. Edit [docs/info.md](docs/info.md) and add a description of your project.
-4. Adapt the testbench to your design. See [test/README.md](test/README.md) for more information.
+| File | Purpose |
+| --- | --- |
+| `src/emg_mav.v` | Chip logic: `tt_um_francodelgado_emg_mav` |
+| `info.yaml` | Project information and logical pin names |
+| `docs/info.md` | How the chip works, how to test it, and external hardware |
+| `test/tb.v` | Verilog simulation wrapper, including gate-level power connections |
+| `test/test.py` | Cocotb checks and recorded-sample replay |
+| `test/rest_ch0.hex` | Rest recording used by the test |
+| `test/hand_close_ch0.hex` | Hand-close recording used by the test |
+| `test/tb.gtkw` | Optional GTKWave signal layout |
+| `test/Makefile` | RTL and gate-level simulation setup |
 
-The GitHub action will automatically build the ASIC files using [LibreLane](https://www.zerotoasiccourse.com/terminology/librelane/).
+Start with [the project guide](docs/info.md). For simulation, read [the test instructions](test/README.md).
 
-## Enable GitHub actions to build the results page
+## Hardware for a first test
 
-- [Enabling GitHub Pages](https://tinytapeout.com/faq/#my-github-action-is-failing-on-the-pages-part)
+Use a Tiny Tapeout development board or an FPGA implementation, an ESP32-S3 development board with enough available GPIO, and a suitable analog input source. An EMG test also needs a conditioned EMG sensor signal. The complete parallel interface needs more pins than a small XIAO board conveniently exposes; check the exact ESP32-S3 board before wiring it.
 
-## Resources
+The chip does not include an ADC, analog amplification, or permanent configuration storage. Settings return to their defaults after reset. ESP32-S3 firmware and a board-specific wiring diagram are not included in this repository.
 
-- [FAQ](https://tinytapeout.com/faq/)
-- [Digital design lessons](https://tinytapeout.com/digital_design/)
-- [Learn how semiconductors work](https://tinytapeout.com/siliwiz/)
-- [Join the community](https://tinytapeout.com/discord)
-- [Build your design locally](https://www.tinytapeout.com/guides/local-hardening/)
+## Validation
 
-## What next?
-
-- [Submit your design to the next shuttle](https://app.tinytapeout.com/).
-- Edit [this README](README.md) and explain your design, how it works, and how to test it.
-- Share your project on your social network of choice:
-  - LinkedIn [#tinytapeout](https://www.linkedin.com/search/results/content/?keywords=%23tinytapeout) [@TinyTapeout](https://www.linkedin.com/company/100708654/)
-  - Mastodon [#tinytapeout](https://chaos.social/tags/tinytapeout) [@matthewvenn](https://chaos.social/@matthewvenn)
-  - X (formerly Twitter) [#tinytapeout](https://twitter.com/hashtag/tinytapeout) [@tinytapeout](https://twitter.com/tinytapeout)
-  - Bluesky [@tinytapeout.com](https://bsky.app/profile/tinytapeout.com)
+The Cocotb test covers arithmetic, thresholds, protocol behavior, and replay of two recorded sample files. Passing simulation does not by itself mean the project is ready for fabrication. Run the test and GDS workflows on the final commit, and check the physical-flow results and the submission requirements.
